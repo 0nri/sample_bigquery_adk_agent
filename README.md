@@ -61,9 +61,9 @@ Then, edit the `.env` file and replace the placeholder values with your actual G
 
 ## Running the Agent Locally
 
-You can run the agent using either the ADK web interface or the command-line interface.
+For local development and testing, use the ADK web interface which provides an interactive UI. The deployed Cloud Run version uses A2A protocol for integration with Gemini Enterprise (formerly known as Agentspace).
 
-### Option 1: ADK Web Interface
+### Option 1: ADK Web Interface (Recommended for Local Testing)
 
 1.  **Ensure your `.env` file is configured.**
 
@@ -85,14 +85,6 @@ Run the agent in interactive CLI mode:
 ```bash
 adk run bigquery_agent
 ```
-
-### Option 3: FastAPI Development Server
-
-Run the FastAPI application directly:
-```bash
-python main.py
-```
-Then access the web interface at `http://localhost:8080`.
 
 ## Example Questions
 
@@ -159,3 +151,77 @@ In a CI/CD environment (like GitLab or GitHub Actions), you should not use a `.e
 -   `CLOUD_RUN_MAX_INSTANCES` (optional, defaults to `2`)
 
 The `deploy_cloudrun.sh` script will automatically pick up these environment variables.
+
+## Testing the Deployed Agent
+
+Once deployed to Cloud Run, the agent is accessible via the A2A (Agent-to-Agent) protocol.
+
+### Via Command Line
+
+Test the deployed agent using curl with the A2A/JSON-RPC protocol:
+
+```bash
+curl -X POST https://YOUR-SERVICE-URL.run.app \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "chat",
+    "params": {
+      "messages": [
+        {"role": "user", "content": "What is the total revenue from all sales?"}
+      ]
+    },
+    "id": 1
+  }'
+```
+
+Replace `YOUR-SERVICE-URL.run.app` with your actual Cloud Run service URL.
+
+### Via Gemini Enterprise (Agentspace)
+
+The deployed agent can be integrated with Gemini Enterprise (Agentspace) for a conversational interface. See the section below on how to register your agent.
+
+## Registering with Gemini Enterprise (formerly known as Agentspace)
+
+Once your agent is deployed to Cloud Run with an external endpoint, you can register it with Gemini Enterprise (Agentspace) to make it available in the conversational interface.
+
+### Prerequisites
+
+- Agent must be deployed with an external endpoint (e.g., Cloud Run as shown above)
+- The ADK framework automatically generates an agent card at `/.well-known/agent-card.json` after deployment
+- Install the `agentspace-registration-cli` tool
+
+### Installation
+
+Install the registration CLI tool:
+
+```bash
+pip install agentspace-registration-cli
+```
+
+### Register the Agent
+
+Run the following command to register your deployed agent with Agentspace:
+
+```bash
+agentspace-reg register \
+  --source_type a2a \
+  --project_id "YOUR_PROJECT_ID" \
+  --app_id "YOUR_APP_ID" \
+  --discovery_location "YOUR_LOCATION" \
+  --display_name "YOUR_AGENT_DISPLAY_NAME" \
+  --description "YOUR_AGENT_DESCRIPTION" \
+  --agent_card_json "https://YOUR-SERVICE-URL.run.app/.well-known/agent-card.json"
+```
+
+**Parameters**:
+- `--source_type`: Use `a2a` for agents using the A2A (Agent-to-Agent) protocol
+- `--project_id`: Your Google Cloud project ID
+- `--app_id`: The Gemini Enterprise application ID (engine ID)
+- `--discovery_location`: Location where your Gemini Enterprise app is created (e.g., `us`, `global`)
+- `--display_name`: The name that will be displayed in Agentspace
+- `--description`: A brief description of your agent's capabilities
+- `--agent_card_json`: URL to your deployed agent's auto-generated agent card
+
+For more advanced configuration options and troubleshooting, see the [agentspace-registration-cli documentation](https://github.com/0nri/agentspace-registration-cli).

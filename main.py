@@ -1,29 +1,26 @@
 """
 This file initializes a FastAPI application for the Sample BigQuery ADK Agent
-using get_fast_api_app() from ADK. This makes the agent deployable to Cloud Run.
+with A2A (Agent-to-Agent) protocol support. This makes the agent deployable to
+Cloud Run and accessible via Agentspace.
 """
 
 import os
+
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI
-from google.adk.cli.fast_api import get_fast_api_app
+from google.adk.a2a.utils.agent_to_a2a import to_a2a
+
+from bigquery_agent.agent import root_agent
 
 # Load environment variables from .env file
 load_dotenv()
 
-# The directory containing this script is the root for agent discovery.
-AGENT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Create the FastAPI app using the ADK helper.
-# This will discover the 'sample_bigquery_adk_agent' agent package.
-app: FastAPI = get_fast_api_app(
-    agents_dir=AGENT_DIR,
-    web=True  # Serve the ADK web UI as well
-)
-
-app.title = "Sample BigQuery ADK Agent"
-app.description = "A sample ADK agent for BigQuery."
+# Create A2A-compatible FastAPI app
+# This will:
+# - Expose the agent via A2A protocol (handles POST requests)
+# - Auto-generate agent card at /.well-known/agent-card.json
+# - Enable Agentspace integration
+app = to_a2a(root_agent, port=int(os.environ.get("PORT", 8080)))
 
 if __name__ == "__main__":
     # Use the PORT environment variable for Cloud Run compatibility, default to 8080.

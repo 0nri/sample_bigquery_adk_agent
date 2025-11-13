@@ -192,6 +192,30 @@ Once your agent is deployed to Cloud Run with an external endpoint, you can regi
 - The ADK framework automatically generates an agent card at `/.well-known/agent-card.json` after deployment
 - Install the `agentspace-registration-cli` tool
 
+### IAM Configuration for Agentspace
+
+**IMPORTANT**: When your agent is deployed on Cloud Run, Gemini Enterprise (Agentspace) requires IAM permissions to invoke your service. You must grant the Cloud Run Invoker role to the Discovery Engine service account.
+
+1. **Find your project number**:
+   ```bash
+   gcloud projects describe YOUR_PROJECT_ID --format="value(projectNumber)"
+   ```
+
+2. **Grant the Cloud Run Invoker role**:
+   ```bash
+   gcloud run services add-iam-policy-binding YOUR_SERVICE_NAME \
+     --region=YOUR_REGION \
+     --member="serviceAccount:service-PROJECT_NUMBER@gcp-sa-discoveryengine.iam.gserviceaccount.com" \
+     --role="roles/run.invoker"
+   ```
+
+   Replace:
+   - `YOUR_SERVICE_NAME`: Your Cloud Run service name (e.g., `sample-bq-agent`)
+   - `YOUR_REGION`: Your Cloud Run region (e.g., `asia-east2`)
+   - `PROJECT_NUMBER`: Your Google Cloud project number (from step 1)
+
+**Why is this needed?** This permission allows Agentspace to authenticate and make requests to your Cloud Run agent using IAM authentication.
+
 ### Installation
 
 Install the registration CLI tool:

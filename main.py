@@ -10,10 +10,8 @@ import uvicorn
 from dotenv import load_dotenv
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
 
-from bigquery_agent.agent import root_agent
-
-# Load environment variables from .env file
 load_dotenv()
+from bigquery_agent.agent import root_agent
 
 # Create A2A-compatible FastAPI app
 # This will:
